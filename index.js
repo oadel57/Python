@@ -1,71 +1,164 @@
-const wordList = require('./hangman_words');
-const { logo, stages } = require('./hangman_art');
+//Current line
+var CurrentId = undefined;
 
-console.log(logo);
+var inputValues = [];
 
-let lives = 6;
-const chosenWord = wordList[Math.floor(Math.random() * wordList.length)];
-let placeholder = "_".repeat(chosenWord.length);
-console.log("Word to guess: " + placeholder);
+const letters = [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+];
+const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const symbols = ["!", "#", "$", "%", "&", "(", ")", "*", "+"];
+const inputPrompts = [
+  "How many symbols would you like?",
+  "How many numbers would you like?",
+];
 
-let gameOver = false;
-let correctLetters = [];
-
-const readline = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
+//Click Run
+$(document).ready(function () {
+  $("#run-button").click(function () {
+    inputValues = [];
+    $("#Content").empty();
+    NewLine("Welcome to the PyPassword Generator!", false);
+    NewLine("How many letters would you like in your password?", true);
+  });
 });
 
-function askGuess() {
-    if (gameOver) {
-        readline.close();
-        return;
+//Enter button
+$(document).on("keydown", function (e) {
+  var x = event.which || event.keyCode;
+  if (x === 13 || x == 13) {
+    var consoleLine = $("#" + CurrentId + " input").val();
+    inputValues.push({ id: CurrentId, val: consoleLine });
+
+    if (inputValues.length > inputPrompts.length) {
+      let password_list = [];
+      for (let i = 0; i < Number(inputValues[0].val); i++) {
+        console.log(i);
+        password_list.push(letters[Math.floor(Math.random() * letters.length)]);
+      }
+
+      for (let i = 0; i < Number(inputValues[1].val); i++) {
+        password_list.push(symbols[Math.floor(Math.random() * symbols.length)]);
+      }
+      for (let i = 0; i < Number(inputValues[2].val); i++) {
+        password_list.push(numbers[Math.floor(Math.random() * numbers.length)]);
+      }
+      NewLine("", false);
+      const shuffledPasswordList = shuffleArray(password_list);
+      NewLine("", false);
+
+      let password = "";
+      for (const char in shuffledPasswordList) {
+        password += shuffledPasswordList[char];
+      }
+      NewLine("Your password is: " + password, false);
+
+      $(".console-carrot").remove();
+      return;
     }
-    
-    console.log(`**************************** ${lives}/6 LIVES LEFT ****************************`);
-    readline.question("Guess a letter: ", (guess) => {
-        guess = guess.toLowerCase();
+    $(".console-carrot").remove();
+    NewLine(inputPrompts[inputValues.length - 1], true);
+  }
+});
+$(document).on("keydown", function (e) {
+  var x = event.which || event.keyCode;
+  var line = $("#" + CurrentId + " input");
+  var length = line.val().length;
+  if (x != 8) {
+    line.attr("size", 1 + length);
+  } else {
+    line.attr("size", length * 0.95);
+  }
+  if (length === 0) {
+    $("#" + CurrentId + " input").attr("size", "1");
+  }
+});
+$(document).on("click", function (e) {
+  $("#" + CurrentId + " input").focus();
+});
 
-        if (correctLetters.includes(guess)) {
-            console.log(`You've already guessed ${guess}!`);
-        }
+//New line
+function NewLine(text, isPrompt) {
+  $(".console-carrot").remove();
+  if (CurrentId !== undefined) {
+    $("#" + CurrentId + " input").prop("disabled", true);
+  }
+  CurrentId = "consoleInput-" + GenerateId();
 
-        let display = "";
-        for (let letter of chosenWord) {
-            if (letter === guess) {
-                display += letter;
-                if (!correctLetters.includes(guess)) correctLetters.push(guess);
-            } else if (correctLetters.includes(letter)) {
-                display += letter;
-            } else {
-                display += "_";
-            }
-        }
-
-        console.log("Word to guess: " + display);
-
-        if (!chosenWord.includes(guess)) {
-            console.log(`You guessed ${guess}, that's not in the word. You lose a life.`);
-            lives--;
-
-            if (lives === 0) {
-                gameOver = true;
-                console.log(`***********************YOU LOSE********************** \nCorrect word was ${chosenWord}`);
-                readline.close();
-                return;
-            }
-        }
-
-        if (!display.includes("_")) {
-            gameOver = true;
-            console.log("****************************YOU WIN****************************");
-            readline.close();
-            return;
-        }
-
-        console.log(stages[lives]);
-        askGuess();
-    });
+  if (isPrompt) {
+    $("#Content").append("<div>" + text + "</div>");
+    $("#Content").append(
+      '<div id="' +
+        CurrentId +
+        '">' +
+        '<input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" type="text" class="terminal-input" /><div class="console-carrot"></div></div>'
+    );
+    $("#" + CurrentId + " input").focus();
+    $("#" + CurrentId + " input").attr("size", "1");
+  } else {
+    $("#Content").append('<div id="' + CurrentId + '">' + text + "</div>");
+  }
 }
 
-askGuess();
+function GenerateId() {
+  return Math.random().toString(16).slice(2);
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
